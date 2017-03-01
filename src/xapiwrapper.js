@@ -495,7 +495,7 @@ function isDate(date) {
                 headers = {"If-None-Match":'"'+noneMatchHash+'"'};
             }
 
-            var method = "PUT";
+            var method = (matchHash || noneMatchHash) ? "PUT" : "POST";
             if (stateval)
             {
                 if (stateval instanceof Array)
@@ -509,10 +509,10 @@ function isDate(date) {
                     stateval = JSON.stringify(stateval);
                     headers = headers || {};
                     headers["Content-Type"] ="application/json";
-                    method = "POST";
                 }
                 else
                 {
+                    method = "PUT";
                     headers = headers || {};
                     headers["Content-Type"] ="application/octet-stream";
                 }
@@ -674,6 +674,7 @@ function isDate(date) {
      * @param {string} [matchHash]    the hash of the profile to replace or * to replace any
      * @param {string} [noneMatchHash]    the hash of the current profile or * to indicate no previous profile
      * @param {string} [callback]   function to be called after the LRS responds
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
      * @return {bolean} false if no activity profile is included
@@ -682,11 +683,11 @@ function isDate(date) {
      * ADL.XAPIWrapper.sendActivityProfile("http://adlnet.gov/expapi/activities/question",
      *                                     "actprofile", profile, null, "*");
      */
-    XAPIWrapper.prototype.sendActivityProfile = function(activityid, profileid, profileval, matchHash, noneMatchHash, callback)
+    XAPIWrapper.prototype.sendActivityProfile = function(activityid, profileid, profileval, matchHash, noneMatchHash, callback, altConfig)
     {
         if (this.testConfig())
         {
-            var url = this.lrs.endpoint + "activities/profile?activityId=<activity ID>&profileId=<profileid>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "activities/profile?activityId=<activity ID>&profileId=<profileid>";
 
             url = url.replace('<activity ID>',encodeURIComponent(activityid));
             url = url.replace('<profileid>',encodeURIComponent(profileid));
@@ -705,7 +706,7 @@ function isDate(date) {
                 headers = {"If-None-Match":'"'+noneMatchHash+'"'};
             }
 
-            var method = "PUT";
+            var method = (matchHash || noneMatchHash) ? "PUT" : "POST";
             if (profileval)
             {
                 if (profileval instanceof Array)
@@ -719,7 +720,6 @@ function isDate(date) {
                     profileval = JSON.stringify(profileval);
                     headers = headers || {};
                     headers["Content-Type"] ="application/json";
-                    method = "POST";
                 }
                 else
                 {
@@ -733,7 +733,7 @@ function isDate(date) {
                 return false;
             }
 
-            ADL.XHR_request(this.lrs, url, method, profileval, this.lrs.auth, callback, null, false, headers, this.withCredentials);
+            ADL.XHR_request(this.lrs, url, method, profileval, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, false, headers, this.withCredentials);
         }
     };
 
@@ -746,6 +746,7 @@ function isDate(date) {
      * @param {function [callback]    function to be called after the LRS responds
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      * @return {object} xhr response object or null if 404
      * @example
      * ADL.XAPIWrapper.getActivityProfile("http://adlnet.gov/expapi/activities/question",
@@ -753,11 +754,11 @@ function isDate(date) {
      *                                    function(r){ADL.XAPIWrapper.log(JSON.parse(r.response));});
      * >> {info: "the profile"}
      */
-    XAPIWrapper.prototype.getActivityProfile = function(activityid, profileid, since, callback)
+    XAPIWrapper.prototype.getActivityProfile = function(activityid, profileid, since, callback, altConfig)
     {
         if (this.testConfig())
         {
-            var url = this.lrs.endpoint + "activities/profile?activityId=<activity ID>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "activities/profile?activityId=<activity ID>";
 
             url = url.replace('<activity ID>',encodeURIComponent(activityid));
 
@@ -774,7 +775,7 @@ function isDate(date) {
                 }
             }
 
-            var result = ADL.XHR_request(this.lrs, url, "GET", null, this.lrs.auth, callback, null, true, null, this.withCredentials);
+            var result = ADL.XHR_request(this.lrs, url, "GET", null, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, true, null, this.withCredentials);
 
             if(result === undefined || result.status == 404)
             {
@@ -801,17 +802,18 @@ function isDate(date) {
      * @param {string} [callback]   function to be called after the LRS responds
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      * @return {object} xhr response object or null if 404
      * @example
      * ADL.XAPIWrapper.deleteActivityProfile("http://adlnet.gov/expapi/activities/question",
      *                                       "actprofile");
      * >> XMLHttpRequest {statusText: "NO CONTENT", status: 204, response: "", responseType: "", responseXML: null…}
      */
-    XAPIWrapper.prototype.deleteActivityProfile = function(activityid, profileid, matchHash, noneMatchHash, callback)
+    XAPIWrapper.prototype.deleteActivityProfile = function(activityid, profileid, matchHash, noneMatchHash, callback, altConfig)
     {
         if (this.testConfig())
         {
-            var url = this.lrs.endpoint + "activities/profile?activityId=<activity ID>&profileId=<profileid>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "activities/profile?activityId=<activity ID>&profileId=<profileid>";
 
             url = url.replace('<activity ID>',encodeURIComponent(activityid));
             url = url.replace('<profileid>',encodeURIComponent(profileid));
@@ -830,7 +832,7 @@ function isDate(date) {
                 headers = {"If-None-Match":'"'+noneMatchHash+'"'};
             }
 
-            var result = ADL.XHR_request(this.lrs, url, "DELETE", null, this.lrs.auth, callback, null, false, headers,this.withCredentials);
+            var result = ADL.XHR_request(this.lrs, url, "DELETE", null, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, false, headers,this.withCredentials);
 
             if(result === undefined || result.status == 404)
             {
@@ -897,17 +899,18 @@ function isDate(date) {
      * @param {string} [callback]   function to be called after the LRS responds
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      * @return {object} false if no agent profile is included
      * @example
      * var profile = {"info":"the agent profile"};
      * ADL.XAPIWrapper.sendAgentProfile({"mbox":"mailto:tom@example.com"},
      *                                   "agentprofile", profile, null, "*");
      */
-    XAPIWrapper.prototype.sendAgentProfile = function(agent, profileid, profileval, matchHash, noneMatchHash, callback)
+    XAPIWrapper.prototype.sendAgentProfile = function(agent, profileid, profileval, matchHash, noneMatchHash, callback, altConfig)
     {
         if (this.testConfig())
         {
-            var url = this.lrs.endpoint + "agents/profile?agent=<agent>&profileId=<profileid>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "agents/profile?agent=<agent>&profileId=<profileid>";
 
             url = url.replace('<agent>',encodeURIComponent(JSON.stringify(agent)));
             url = url.replace('<profileid>',encodeURIComponent(profileid));
@@ -926,7 +929,7 @@ function isDate(date) {
                 headers = {"If-None-Match":'"'+noneMatchHash+'"'};
             }
 
-            var method = "PUT";
+            var method = (matchHash || noneMatchHash) ? "PUT" : "POST";
             if (profileval)
             {
                 if (profileval instanceof Array)
@@ -940,7 +943,6 @@ function isDate(date) {
                     profileval = JSON.stringify(profileval);
                     headers = headers || {};
                     headers["Content-Type"] ="application/json";
-                    method = "POST";
                 }
                 else
                 {
@@ -954,7 +956,7 @@ function isDate(date) {
                 return false;
             }
 
-            ADL.XHR_request(this.lrs, url, method, profileval, this.lrs.auth, callback, null, false, headers, this.withCredentials);
+            ADL.XHR_request(this.lrs, url, method, profileval, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, false, headers, this.withCredentials);
         }
     };
 
@@ -967,6 +969,7 @@ function isDate(date) {
      * @param {function} [callback]   function to be called after the LRS responds
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      * @return {object} xhr response object or null if 404
      * @example
      * ADL.XAPIWrapper.getAgentProfile({"mbox":"mailto:tom@example.com"},
@@ -974,10 +977,10 @@ function isDate(date) {
      *                                  function(r){ADL.XAPIWrapper.log(JSON.parse(r.response));});
      * >> {info: "the agent profile"}
      */
-    XAPIWrapper.prototype.getAgentProfile = function(agent, profileid, since, callback)
+    XAPIWrapper.prototype.getAgentProfile = function(agent, profileid, since, callback, altConfig)
     {
         if (this.testConfig()){
-            var url = this.lrs.endpoint + "agents/profile?agent=<agent>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "agents/profile?agent=<agent>";
 
             url = url.replace('<agent>',encodeURIComponent(JSON.stringify(agent)));
             url = url.replace('<profileid>',encodeURIComponent(profileid));
@@ -995,7 +998,7 @@ function isDate(date) {
                 }
             }
 
-            var result = ADL.XHR_request(this.lrs, url, "GET", null, this.lrs.auth, callback, null, true, null,this.withCredentials);
+            var result = ADL.XHR_request(this.lrs, url, "GET", null, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, true, null,this.withCredentials);
 
             if(result === undefined || result.status == 404)
             {
@@ -1022,17 +1025,18 @@ function isDate(date) {
      * @param {string} [callback]   function to be called after the LRS responds
      *            to this request (makes the call asynchronous)
      *            the function will be passed the XMLHttpRequest object
+     * @param {string} [altConfig]   alternative configuration object, use endpoint and auth values from here if set
      * @return {object} xhr response object or null if 404
      * @example
      * ADL.XAPIWrapper.deleteAgentProfile({"mbox":"mailto:tom@example.com"},
      *                                     "agentprofile");
      * >> XMLHttpRequest {statusText: "NO CONTENT", status: 204, response: "", responseType: "", responseXML: null…}
      */
-    XAPIWrapper.prototype.deleteAgentProfile = function(agent, profileid, matchHash, noneMatchHash, callback)
+    XAPIWrapper.prototype.deleteAgentProfile = function(agent, profileid, matchHash, noneMatchHash, callback, altConfig)
     {
         if (this.testConfig())
         {
-            var url = this.lrs.endpoint + "agents/profile?agent=<agent>&profileId=<profileid>";
+            var url = (altConfig && altConfig.endpoint ? altConfig.endpoint : this.lrs.endpoint) + "agents/profile?agent=<agent>&profileId=<profileid>";
 
             url = url.replace('<agent>',encodeURIComponent(JSON.stringify(agent)));
             url = url.replace('<profileid>',encodeURIComponent(profileid));
@@ -1051,7 +1055,7 @@ function isDate(date) {
                 headers = {"If-None-Match":'"'+noneMatchHash+'"'};
             }
 
-            var result = ADL.XHR_request(this.lrs, url, "DELETE", null, this.lrs.auth, callback, null, false,headers,this.withCredentials);
+            var result = ADL.XHR_request(this.lrs, url, "DELETE", null, (altConfig && altConfig.auth ? altConfig.auth : this.lrs.auth), callback, null, false,headers,this.withCredentials);
 
             if(result === undefined || result.status == 404)
             {
